@@ -8,7 +8,8 @@ A streaming file and folder encryption tool built with Python and Tkinter, by `C
 
 It handles anything from a few files to multi-terabyte folders by processing data in 64KB chunks, so memory use stays low even for very large files.
 
-*(Add a screenshot of the main window here)*
+<img width="1277" height="662" alt="image" src="https://github.com/user-attachments/assets/1d3d4a41-4888-4559-b32c-ef8dca12e6a6" />
+
 
 ---
 
