@@ -37,7 +37,7 @@ It handles anything from a few files to multi-terabyte folders by processing dat
 
 ### Option 1: Download the .exe
 
-1. Go to the [**Releases Page**]([https://github.com/YOUR_USERNAME/YOUR_REPOSITORY/releases](https://github.com/coldman07/CryptDir_Pro/releases/tag/v3)).
+1. Go to the [**Releases Page**]([[https://github.com/YOUR_USERNAME/YOUR_REPOSITORY/releases](https://github.com/coldman07/CryptDir_Pro/releases/tag/v3)](https://github.com/coldman07/CryptDir_Pro/releases/tag/v3)).
 2. Download the latest `CryptDirPro.exe`.
 3. Place it **outside** any folder you plan to encrypt, then double-click to run.
 
