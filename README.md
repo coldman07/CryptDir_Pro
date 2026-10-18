@@ -1,106 +1,117 @@
-# 🔐 CryptDir Pro v2.10.5
+# 🔐 CryptDir Pro v3
+
 ![Platform](https://img.shields.io/badge/Platform-Windows-0078D6?style=for-the-badge)
-![Python](https://img.shields.io/badge/Python-3.7%2B-306998?style=for-the-badge&logo=python)
+![Python](https://img.shields.io/badge/Python-3.9%2B-306998?style=for-the-badge&logo=python)
 ![License](https://img.shields.io/badge/License-MIT-yellow.svg?style=for-the-badge)
 
-A high-security, streaming file and folder encryption tool built with Python and Tkinter. Designed by `COLDMAN` for professional-grade security with a user-friendly interface.
+A streaming file and folder encryption tool built with Python and Tkinter, by `COLDMAN`.
 
-This tool is designed to handle directories of any size—from a few files to terabytes—by streaming data in 64KB chunks, ensuring low memory usage even when processing massive files.
+It handles anything from a few files to multi-terabyte folders by processing data in 64KB chunks, so memory use stays low even for very large files.
 
-*(A screenshot of the main application window)*
+*(Add a screenshot of the main window here)*
 
 ---
 
 ## ⚡ Key Features
 
-* **AES-256-CTR + HMAC-SHA256:** Uses industry-standard, production-grade authenticated encryption (Encrypt-then-MAC) to protect against both eavesdropping and data-tampering.
-* **Secure Key Derivation:** Employs **PBKDF2** with 100,000 iterations to stretch your password, making brute-force attacks extremely difficult.
-* **Streaming Encryption:** Processes files in small chunks, allowing it to encrypt/decrypt massive files (50GB+) with minimal RAM usage.
-* **"Test Decrypt" Utility:** Safely verifies file integrity and password correctness by checking the HMAC signature *without* decrypting, modifying, or writing any data.
-* **Robust Error Handling:**
-    * **Atomic Operations:** Uses temporary files (`.encrypting`, `.decrypting`) and atomic `os.replace` calls to ensure your original files are safe, even if the operation is cancelled or fails.
-    * **Automatic Backups:** Creates a `.backup_temp` of the original file before processing and automatically restores it if any error occurs.
-* **Flexible Processing Modes:**
-    * **Folder Mode:** Recursively processes every file in a directory (uses a fast, single-pass scan).
-    * **Files Mode:** Allows you to hand-pick specific files for processing.
-* **Password Strength Meter:** Provides real-time feedback on your password's strength.
-* **Windows Folder Utility:** Includes a button to quickly toggle the "Hidden" and "System" attributes for the target folder.
+* **AES-256-CTR + HMAC-SHA256:** Authenticated encryption (Encrypt-then-MAC). Any change to an encrypted file makes verification fail, and nothing is decrypted until the MAC checks out.
+* **PBKDF2-HMAC-SHA256 with 600,000 iterations** to stretch your password.
+* **Streaming processing:** Large files (50GB+) use minimal RAM.
+* **Test Decrypt:** Verifies the password, salt and file integrity by checking the HMAC only. It never modifies or writes any file.
+* **Safe, atomic writes:**
+  * Output goes to a temporary file (`.encrypting` / `.decrypting`), is flushed to disk with `fsync`, and only then replaces the original with `os.replace`.
+  * If you cancel, hit an error, or lose power mid-file, the original stays intact.
+  * File timestamps and permissions are preserved.
+* **Pre-flight checks:** Free disk space is checked before each file, and already-encrypted files are skipped instead of being encrypted twice.
+* **Wrong-password protection:** Decrypt and test runs stop after 3 consecutive HMAC failures, so a wrong password doesn't read your whole folder. One damaged file won't stop the rest of the batch.
+* **Stale temp cleanup:** Leftover `.encrypting` / `.decrypting` files older than 24 hours are removed at the start of an encrypt or decrypt run. Test runs never delete anything.
+* **Two processing modes:** Entire folder (recursive) or hand-picked files.
+* **Skips what it shouldn't touch:** `salt.key`, symlinks, temp files, legacy `.backup_temp` files, and the application itself.
+* **Password strength meter,** enforced when encrypting. Decrypt and test accept any password, so older files stay reachable.
+* **Windows folder utility:** Toggles the Hidden and System attributes on the target folder.
 
 ---
 
 ## 🚀 How to Use
 
-This application is **Windows-only**.
+### Option 1: Download the .exe
 
-### Option 1: Download the .exe (Recommended)
+1. Go to the [**Releases Page**](https://github.com/YOUR_USERNAME/YOUR_REPOSITORY/releases).
+2. Download the latest `CryptDirPro.exe`.
+3. Place it **outside** any folder you plan to encrypt, then double-click to run.
 
-This is the easiest method for most users. No Python or setup required.
+Some antivirus tools flag single-file PyInstaller executables of encryption tools. This is a known false positive. Building with `--onedir` or running from source avoids it.
 
-1.  Go to the [**Releases Page**](https://github.com/YOUR_USERNAME/YOUR_REPOSITORY/releases) of this repository.
-2.  Download the latest `CryptDir_Pro.exe` file.
-3.  Place the `.exe` in any folder and double-click to run it.
+### Option 2: Run from Python source
 
-### Option 2: Run from Python Source
+**Requirements:** Windows 10/11, Python 3.9+, and the `cryptography` library.
 
-This is for developers or users who prefer to run directly from the source code.
+```sh
+pip install cryptography
+python cryptdir_pro.py
+```
 
-**Requirements:**
-* Windows 10 / 11
-* Python 3.7+
-* Required library: `cryptography`
+### Build your own exe
 
-**Running:**
-1.  Install the required library:
-    ```sh
-    pip install cryptography
-    ```
-2.  Download the `CryptDir_ProV2.10.5_secure_streaming.py` file.
-3.  Run the script from your terminal:
-    ```sh
-    python CryptDir_ProV2.10.5_secure_streaming.py
-    ```
+```sh
+pip install pyinstaller cryptography
+pyinstaller --onefile --windowed --name CryptDirPro cryptdir_pro.py
+```
+
+The result is `dist\CryptDirPro.exe`.
+
+### Typical workflow
+
+1. Click **Browse** and choose a folder (or switch to *Select Specific Files*).
+2. Enter a password. For encryption it needs 8+ characters with upper case, lower case and a number.
+3. Leave the salt options alone for the default: a random salt is saved as `salt.key` in the folder.
+4. Click **ENCRYPT**. To check the result later, use **TEST DECRYPT**. To restore, use **DECRYPT** with the same password.
 
 ---
 
 ## 🛡️ Security Model
 
-Security is the primary focus of this tool. It does not roll its own crypto and relies on the standard `cryptography` library.
+The tool uses the standard `cryptography` library and does not implement its own primitives.
 
-* **Cipher:** AES-256 in Counter (CTR) mode. CTR is a streaming mode, making it ideal for files of any size.
-* **Authentication:** HMAC with SHA-256. This is applied *after* encryption (Encrypt-then-MAC) to create an authenticated ciphertext. Any modification to the encrypted file will cause the HMAC verification to fail, preventing decryption of corrupt or tampered data.
-* **Key Derivation (KDF):** PBKDF2-HMAC-SHA256.
-    * **Iterations:** `100,000`
-    * **Salt:** A 16-byte random salt is automatically generated (`salt.key`) or can be provided manually.
-    * **Output Key:** 64 bytes (32 bytes for the AES encryption key, 32 bytes for the HMAC authentication key).
+* **Cipher:** AES-256 in CTR mode with a fresh random 16-byte IV per file.
+* **Authentication:** HMAC-SHA256 over the header and the ciphertext. It is verified over the whole file **before** any plaintext is written.
+* **Key derivation:** PBKDF2-HMAC-SHA256, 600,000 iterations, 64-byte output (32 bytes for AES, 32 bytes for HMAC).
+* **Salt:** 16 random bytes stored in `salt.key`, or a manual salt you supply (16+ characters recommended). The salt is not secret, but you need it to decrypt. One salt is shared by every file in a run, and an existing `salt.key` is reused so earlier files stay decryptable.
 
-### Versioned File Format
-
-The tool uses a custom, versioned file format (v2.10) to ensure future compatibility.
+### File format (v2.11)
 
 | Offset | Length | Description |
 | :--- | :--- | :--- |
-| `0` | 5 bytes | Magic Bytes (`b'CDPRO'`) |
-| `5` | 2 bytes | Version (`b'\x02\x0A'`) |
+| `0` | 5 bytes | Magic bytes (`b'CDPRO'`) |
+| `5` | 2 bytes | Version (`b'\x02\x0B'`) |
 | `7` | 1 byte | Reserved (`b'\x00'`) |
-| `8` | 16 bytes | Initialization Vector (IV) |
-| `24` | 8 bytes | Original File Size (Struct `<Q`) |
-| `32` | `N` bytes | Encrypted Data |
-| `32+N` | 32 bytes | HMAC-SHA256 Tag |
+| `8` | 16 bytes | Initialization vector (IV) |
+| `24` | 8 bytes | Original file size (`<Q`) |
+| `32` | `N` bytes | Encrypted data |
+| `32+N` | 32 bytes | HMAC-SHA256 tag (covers header + data) |
+
+Files written by older v2.x builds can still be read. Files from a newer format version are refused.
+
+### Known limitations
+
+* File names, folder structure and file sizes are **not** hidden.
+* Every file in a run uses the same salt and key. Don't mix different passwords in one folder: already-encrypted files are skipped, so a second run with a new password leaves them under the old one.
+* Cancelling mid-run is safe for the original file, but the batch is only partly processed.
 
 ---
 
-## ⚠️ !! CRITICAL WARNING !! ⚠️
+## ⚠️ Critical Warning
 
-This is a powerful encryption tool. Failure to follow instructions **WILL** result in permanent data loss.
+This is a powerful encryption tool. Mistakes can cause permanent data loss.
 
-1.  **NO RECOVERY:** If you lose your **Password** OR your **`salt.key` file** (if one was generated), your data is **PERMANENTLY AND IRRECOVERABLY LOST.** There is no backdoor.
-2.  **BACKUP FIRST:** Always back up your important files to a separate location *before* performing any encryption or decryption.
-3.  **DO NOT INTERRUPT:** While the tool has safeguards, forcefully killing the process (e.g., via Task Manager) or a sudden power loss during an operation *may* corrupt the file being processed. Always use the "CANCEL OPERATION" button.
+1. **No recovery.** If you lose your **password** or your **`salt.key`** (or manual salt), your data is permanently and irrecoverably lost. There is no backdoor. Keep a copy of `salt.key` somewhere other than the encrypted folder.
+2. **Back up first.** Copy important files elsewhere before encrypting or decrypting.
+3. **Prefer Cancel to killing the process.** The original file is protected by atomic replacement, but a forced kill can leave a `.encrypting` / `.decrypting` temp file behind. It is cleaned up automatically after 24 hours.
 
-The author (`COLDMAN`) is not responsible for any data loss or damage resulting from the use of this software. **Use at your own risk.**
+The author (`COLDMAN`) is not responsible for data loss or damage resulting from use of this software. **Use at your own risk.**
 
 ---
 
 ## License
 
-This project is licensed under the MIT License.
+MIT License.
